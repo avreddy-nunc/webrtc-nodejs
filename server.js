@@ -27,7 +27,7 @@ router.get('/startSession', function (req, res) {
     opentok.createSession({mediaMode:"routed"},function (err, session) {
         if(err){
             console.log(err);
-            res.json({"error":err,"response": null});
+            res.json({"errors":err,"response": null});
             return
         }
         var token = session.generateToken();
