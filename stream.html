@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <!-- OpenTok.js library -->
+    <script src="https://static.opentok.com/v2/js/opentok.js"></script>
+    <meta charset="UTF-8">
+    <title>stream</title>
+
+</head>
+
+<body>
+<button id="start">Start</button>
+<button id="stop">Stop</button>
+<div id="videos">
+    <div id="publisher" style="width: 400px;height: 400px;"></div>
+    <div id="subscriber" style="width: 400px;height: 400px;"></div>
+</div>
+<script>
+    (function(){
+        var API_KEY = '';
+        var TOKEN = '';
+        var SESSION_ID = '';
+        var ARCHIVE_ID = '';
+        var session = '';
+        var connectionCount = 0;
+        init();
+        function init() {
+            $.get('/api/startSession', function (data) {
+                if(data.error){
+                    console.log(data.error);
+                    return
+                }
+                console.log(data.response);
+                SESSION_ID = data.response.id;
+                API_KEY = data.response.api;
+                TOKEN = data.response.token;
+                startSession()
+            })
+        }
+        function startSession() {
+            var session = OT.initSession(API_KEY, SESSION_ID);
+
+            // Subscribe to a newly created stream
+            session.on('streamCreated', function(event) {
+                session.subscribe(event.stream, 'subscriber', {
+                    insertMode: 'append',
+                    width: '100%',
+                    height: '100%'
+                }, handleError);
+            });
+
+            // Create a publisher
+            var publisher = OT.initPublisher('publisher', {
+                insertMode: 'append',
+                width: '100%',
+                height: '100%'
+            }, handleError);
+
+            // Connect to the session
+            session.connect(TOKEN, function(error) {
+                // If the connection is successful, initialize a publisher and publish to the session
+                if (error) {
+                    handleError(error);
+                } else {
+                    session.publish(publisher, handleError);
+                }
+            });
+            function handleError(err) {
+                if(err){
+                    console.log(err);
+                }
+            }
+        }
+
+        function startArchive() {
+            $.get('/api/startArchive/'+SESSION_ID, function (data) {
+                if(data.error){
+                    console.log(data.error);
+                    return
+                }
+                ARCHIVE_ID = data.res.id;
+                console.log(data.res);
+            })
+        }
+        function stopArchive(){
+            $.get('/api/stop/'+ARCHIVE_ID, function (data) {
+                if(data.error){
+                    console.log(data.error);
+                    return;
+                }
+                console.log('stopped')
+            })
+        }
+        $('#stop').on("click", function (e) {
+            e.preventDefault();
+            stopArchive();
+        });
+        $('#start').on("click", function (e) {
+            e.preventDefault();
+            startArchive();
+        })
+    })()
+</script>
+</body>
+</html>
